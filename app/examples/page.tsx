@@ -3,9 +3,10 @@ import { ExporterDRACO } from "./components/misc_exporter_draco";
 import { AmmoRope } from "./components/ammo_rope";
 import { DragControlCanvas } from "./components/misc_controls_drag";
 import { CameraArray } from "./components/webgl_camera_array";
+import { GLTFViewer } from "./components/GLTFViewer";
 
 const HousePage = () => {
-	return <CameraArray/>
+	return <GLTFViewer />
 };
 
 export default HousePage;
