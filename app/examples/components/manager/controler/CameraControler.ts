@@ -9,7 +9,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 //-----------------------------------------------------------------------------//
 const CANVAS_NAME : string = "#glcanvas";
 const ZOOM_DISTANCE : number = 1000;
-const FOCUS_DISTANCE : number = 500;
+const FOCUS_DISTANCE : number = 1000;
 
 //-----------------------------------------------------------------------------//
 //  カメラ操作を管理するクラス
