@@ -125,6 +125,7 @@ export const GLTFViewer = () => {
     loader.load(INITIAL_MODEL, function (gltf) {
       model = gltf.scene;
       model.name = "InitialModel";
+      model.position.set(0, -10, 0)
       scene.add(model);
 
       gui.add(scaleController, "scale", 0.1, 5)
@@ -248,17 +249,50 @@ export const GLTFViewer = () => {
       const boxCenter = boundingBox.getCenter(new Vector3());
 
       // set the camera to frame the box
-      frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
+      // frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
 
-      // const desiredSize = window.innerHeight * (1 / 4);
+      const scaleFactor = 5 / Math.max(size.x, size.y, size.z);
 
       model = track(gltf.scene);
       model.name = "NewModel";
-      // model.scale.set(desiredSize / size.x, desiredSize / size.y, desiredSize / size.z);
+      model.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
       scene.add(model);
     }, undefined, (e) => console.error(e));
     rendererRef.current?.render(scene, camera);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+
+    clearOldModel();
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const data = e.target?.result as string;
+        const loader = new GLTFLoader();
+        loader.load(data, (gltf) => {
+          model = track(gltf.scene);
+          model.name = "NewModel";
+
+          const boundingBox = new Box3().setFromObject(gltf.scene);
+          const size = new Vector3();
+
+          const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
+          // model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+          scene.add(model);
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
   };
 
   useEffect(() => {
@@ -281,8 +315,13 @@ export const GLTFViewer = () => {
   if (!isMount) return null
 
   return (
-    <div id="container" className="relative flex justify-center">
-      <div id="input" className="absolute bottom-[4rem] z-50">
+    <div
+      id="container"
+      className="relative flex justify-center"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
+      <div className="absolute bottom-[4rem] z-50">
         <input
           type="file"
           accept=".gltf,.glb"
@@ -291,7 +330,6 @@ export const GLTFViewer = () => {
           className="hidden"
         />
         <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
-          {/* Upload Your GLTF Model ! */}
           GLTFファイルをアップロード
         </button>
       </div>
