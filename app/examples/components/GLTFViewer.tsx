@@ -1,33 +1,40 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { EquirectangularReflectionMapping, AmbientLight, DirectionalLight, Object3D, PerspectiveCamera, Scene, TextureLoader, WebGLRenderer, Box3, Vector3 } from "three"
+import { EquirectangularReflectionMapping, AmbientLight, DirectionalLight, Object3D, PerspectiveCamera, Scene, TextureLoader, WebGLRenderer, Box3, Vector3, BoxGeometry, Mesh, MeshLambertMaterial, Box3Helper, Color } from "three"
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import ResourceTracker from "./manager/tracker/ResourceTrackerManager";
 
-const SKYBOX_TEXTURE: string = '/images/sky_01.jpg';
 const HDR_PATH_TEXTURE: string = '/images/pedestrian_overpass_1k.hdr';
-const GROUND_TEXTURE: string = '/images/moon.jpg';
-// const INITIAL_MODEL: string = 'models/gltf/RobotExpressive/RobotExpressive.glb';
-const INITIAL_MODEL: string = 'models/gltf/Nefertiti.glb';
 
-const scaleController = {
+const MODEL_LIST: Record<string, string> = {
+  '1': 'models/gltf/Flamingo.glb',
+  '2': 'models/gltf/AnisotropyBarnLamp.glb',
+  '3': 'models/gltf/Horse.glb',
+  '4': 'models/gltf/Nefertiti.glb',
+  '5': 'models/gltf/Stork.glb',
+  '6': 'models/gltf/SheenChair.glb',
+};
+
+const guiScaleControl: { scale: number } = {
   scale: 1.0
 };
 
+const guiData: Record<string, string> = {
+  modelFileName: MODEL_LIST['1'],
+};
+
 export const GLTFViewer = () => {
+  const [isMount, setIsMount] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<Scene>();
   const rendererRef = useRef<WebGLRenderer>();
-
-  const [isMount, setIsMount] = useState(false)
-
-  const textureLoader = new TextureLoader();
+  const loader = new GLTFLoader();
   const resMgr = new ResourceTracker();
   const track = resMgr.track.bind(resMgr);
 
@@ -36,7 +43,7 @@ export const GLTFViewer = () => {
   let model: Object3D;
   let requestId: number;
 
-  const initWorld = () => {
+  const initWorld = async () => {
 
     // シーン
 
@@ -53,9 +60,8 @@ export const GLTFViewer = () => {
 
     camera = new PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 500);
     camera.position.set(- 50, 30, 100);
-    // camera.lookAt(1000, 1000, 1000);
 
-    // レンダラーの作成
+    // レンダラー
 
     renderer = new WebGLRenderer({
       canvas: document.querySelector("#glcanvas") as HTMLCanvasElement,
@@ -67,99 +73,15 @@ export const GLTFViewer = () => {
     // カメラコントローラ
 
     controls = new OrbitControls(camera, renderer.domElement);
-    // controls.enableDamping = true;
-    // controls.dampingFactor = 0.05;
-    // controls.screenSpacePanning = false;
-    // controls.minDistance = 100;
-    // controls.maxDistance = 500;
-    // controls.maxPolarAngle = Math.PI / 2;
-    // controls.update();
+    controls.enableDamping = true;
 
-    // スカイボックス
-
-    // textureLoader.load(SKYBOX_TEXTURE, (texture) => {
-    //   const target = new WebGLCubeRenderTarget(texture.image.height);
-    //   target.fromEquirectangularTexture(renderer, texture);
-    //   scene.background = target.texture;
-    //   console.log("SkyBox : succeeded on loading " + SKYBOX_TEXTURE);
-    // }, undefined, () => {
-    //   console.error("SkyBox : failed on loading " + SKYBOX_TEXTURE);
-    //   return;
-    // });
+    // HDR
 
     new RGBELoader().load(HDR_PATH_TEXTURE, function (texture) {
       texture.mapping = EquirectangularReflectionMapping;
       scene.background = texture;
       scene.environment = texture;
     });
-
-    // 地面
-
-    // const groundTexture = textureLoader.load(GROUND_TEXTURE, () => {
-    //   console.log("Ground : succeeded on loading " + GROUND_TEXTURE);
-    // }, undefined, () => {
-    //   console.log("Ground : failed on loading " + GROUND_TEXTURE);
-    //   return;
-    // });
-    // const groundMaterial = new MeshStandardMaterial({ side: DoubleSide });
-    // groundMaterial.map = groundTexture;
-    // const groundGeometry = new CircleGeometry(300, 300);
-    // const groundModel = new Mesh(groundGeometry, groundMaterial);
-    // groundModel.name = "ground";
-    // groundModel.position.set(0, 0, 0);
-    // groundModel.rotation.x = (-0.5 * Math.PI);
-    // scene.add(groundModel);
-
-    // initial model
-
-    gui = new GUI();
-    gui.add(camera, "fov")
-      .min(10)
-      .max(100)
-      .step(1)
-      .onChange(() => camera.updateProjectionMatrix())
-      .name("カメラ調整")
-
-
-    const loader = new GLTFLoader();
-    loader.load(INITIAL_MODEL, function (gltf) {
-      model = gltf.scene;
-      model.name = "InitialModel";
-      model.position.set(0, -10, 0)
-      scene.add(model);
-
-      gui.add(scaleController, "scale", 0.1, 5)
-        .step(0.1)
-        .name("Scale")
-        .onChange(() => {
-          model.scale.set(scaleController.scale, scaleController.scale, scaleController.scale);
-        });
-
-      gui.add(model.position, "x", -50, 50).name("Position X");
-      gui.add(model.position, "y", -50, 50).name("Position Y");
-      gui.add(model.position, "z", -50, 50).name("Position Z");
-    }, undefined, function (e) {
-      console.error(e);
-    });
-
-    // dat.gui.
-
-
-
-
-    // const positionControls = gui.addFolder('Position');
-    // positionControls.add(camera.position, 'x', -300, 300)
-    //   .name('Position X')
-    //   .step(50)
-    //   .onChange(() => camera.updateProjectionMatrix());
-    // positionControls.add(camera.position, 'y', -300, 300)
-    //   .name('Position Y')
-    //   .step(50)
-    //   .onChange(() => camera.updateProjectionMatrix());
-    // positionControls.add(camera.position, 'z', -300, 300)
-    //   .name('Position Z')
-    //   .step(50)
-    //   .onChange(() => camera.updateProjectionMatrix());
 
     // stats
 
@@ -171,56 +93,97 @@ export const GLTFViewer = () => {
     sceneRef.current = scene;
     rendererRef.current = renderer;
 
+    // init initial model
+
+    reloadObject(true);
+
+  }
+
+  const reloadObject = async (resetCamera: boolean) => {
+
+    model && scene.remove(model);
+    // model = null; // 确保不再引用之前加载的模型。
+
+    const gltf = await loadGLTF(guiData.modelFileName);
+    model = track(gltf.scene);
+    scene.add(model);
+
+    const box = new Box3().setFromObject(model);
+    const boxSize = box.getSize(new Vector3()).length();
+    const boxCenter = box.getCenter(new Vector3());
+    frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
+    createGUI();
+  }
+
+  const createGUI = () => {
+
+    gui && gui.destroy();
+
+    // dat.gui.
+    gui = new GUI();
+    gui.add(camera, "fov")
+      .min(10)
+      .max(100)
+      .step(1)
+      .onChange(() => camera.updateProjectionMatrix())
+      .name("カメラ調整")
+    gui.add(guiScaleControl, "scale", 0.1, 5)
+      .step(0.1)
+      .name("Scale")
+      .onChange(() => {
+        model.scale.set(guiScaleControl.scale, guiScaleControl.scale, guiScaleControl.scale);
+      });
+    gui.add(guiData, 'modelFileName', MODEL_LIST)
+      .name('Model')
+      .onFinishChange(() => reloadObject(true));
   }
 
   const animate = () => {
     renderer.render(scene, camera);
     controls.update();
 
-    scene.children.forEach(item => {
-      if (item.name === "NewModel" || item.name === "InitialModel") {
-        item.rotation.y += 0.01;
-      }
-    });
+    // scene.children.forEach(item => {
+    //   if (item.name === "NewModel" || item.name === "InitialModel") {
+    //     item.rotation.y += 0.01;
+    //   }
+    // });
 
     requestId = requestAnimationFrame(animate);
   }
 
+  // リサイズ処理
   const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  const frameArea = (sizeToFitOnScreen: any, boxSize: any, boxCenter: any, camera: any) => {
+  const frameArea = (sizeToFitOnScreen: number, boxSize: number, boxCenter: Vector3, camera: PerspectiveCamera) => {
 
     const halfSizeToFitOnScreen = sizeToFitOnScreen * 0.5;
     const halfFovY = camera.fov * .5 * Math.PI / 180;
     const distance = halfSizeToFitOnScreen / Math.tan(halfFovY);
-    // compute a unit vector that points in the direction the camera is now
-    // in the xz plane from the center of the box
+
+    // カメラが現在どの方向を向いているかを示す単位ベクトルを計算する
+    // ボックスの中心からカメラの位置を引いて、xz平面における方向を示す
     const direction = (new Vector3())
       .subVectors(camera.position, boxCenter)
       .multiply(new Vector3(1, 0, 1))
       .normalize();
 
-    // move the camera to a position distance units way from the center
-    // in whatever direction the camera was from the center already
+    // カメラを中心からの距離ユニットの位置に移動させる
+    // カメラがすでに中心からどの方向を向いているかを考慮する
     camera.position.copy(direction.multiplyScalar(distance).add(boxCenter));
-
-    // pick some near and far values for the frustum that
-    // will contain the box.
     camera.near = boxSize / 100;
     camera.far = boxSize * 100;
-
     camera.updateProjectionMatrix();
 
-    // point the camera to look at the center of the box
+    // カメラをボックスの中心を見るように設定する
     camera.lookAt(boxCenter.x, boxCenter.y + 200, boxCenter.z);
 
   }
 
-  const clearOldModel = async () => {
+  const clearOldModel = () => {
     if (!sceneRef.current || !rendererRef.current) return;
 
     resMgr.dispose();
@@ -230,36 +193,24 @@ export const GLTFViewer = () => {
       item.parent && (item.name === "NewModel" || item.name === "InitialModel")
     );
     groups.forEach((g) => g.parent?.remove(g));
-    rendererRef.current.render(scene, camera);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
     const file = e.target.files?.[0];
     if (!file) return;
 
     clearOldModel();
 
-    const loader = new GLTFLoader();
-    loader.load(URL.createObjectURL(file), (gltf) => {
+    const gltf = await loadGLTF(URL.createObjectURL(file));
+    model = track(gltf.scene);
+    model.name = "NewModel";
+    scene.add(model);
 
-      const boundingBox = new Box3().setFromObject(gltf.scene);
-      const size = new Vector3();
-      boundingBox.getSize(size);
-      const boxSize = boundingBox.getSize(new Vector3()).length();
-      const boxCenter = boundingBox.getCenter(new Vector3());
-
-      // set the camera to frame the box
-      // frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
-
-      const scaleFactor = 5 / Math.max(size.x, size.y, size.z);
-
-      model = track(gltf.scene);
-      model.name = "NewModel";
-      model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
-      scene.add(model);
-    }, undefined, (e) => console.error(e));
-    rendererRef.current?.render(scene, camera);
+    const box = new Box3().setFromObject(model);
+    const boxSize = box.getSize(new Vector3()).length();
+    const boxCenter = box.getCenter(new Vector3());
+    frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -269,37 +220,38 @@ export const GLTFViewer = () => {
 
     clearOldModel();
 
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const data = e.target?.result as string;
-        const loader = new GLTFLoader();
-        loader.load(data, (gltf) => {
-          model = track(gltf.scene);
-          model.name = "NewModel";
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = e.target?.result as string;
 
-          const boundingBox = new Box3().setFromObject(gltf.scene);
-          const size = new Vector3();
+      const gltf = await loadGLTF(data);
+      model = track(gltf.scene);
+      model.name = "NewModel";
+      scene.add(model);
 
-          const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
-          // model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
-          scene.add(model);
-        });
-      };
-      reader.readAsDataURL(file);
-    }
+      const box = new Box3().setFromObject(model);
+      const boxSize = box.getSize(new Vector3()).length();
+      const boxCenter = box.getCenter(new Vector3());
+      frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
+  const loadGLTF = (url: string): Promise<GLTF> => {
+
+    return new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+
+  }
+
   useEffect(() => {
     if (isMount) {
       initWorld();
       animate();
-      window.addEventListener("resize", onWindowResize) // リサイズ処理
+      window.addEventListener("resize", onWindowResize)
     };
     setIsMount(true);
     return () => {
@@ -309,10 +261,9 @@ export const GLTFViewer = () => {
       sceneRef.current?.remove();
       rendererRef.current?.dispose();
     }
-  }, [isMount])
-  // }, [])
+  }, [isMount]);
 
-  if (!isMount) return null
+  if (!isMount) return null;
 
   return (
     <div
@@ -321,7 +272,9 @@ export const GLTFViewer = () => {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
-      <div className="absolute bottom-[4rem] z-50">
+      <div className="absolute bottom-[2rem] z-50 bg-slate-800 px-8 py-6 flex flex-col gap-4 items-center ">
+        <p className="text-white">プレビューしたいGLTFモデルを、</p>
+        <p className="text-white">ここにドラッグ＆ドロップ</p>
         <input
           type="file"
           accept=".gltf,.glb"
@@ -330,7 +283,7 @@ export const GLTFViewer = () => {
           className="hidden"
         />
         <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
-          GLTFファイルをアップロード
+          またはファイルを選択
         </button>
       </div>
       <canvas id="glcanvas" className="relative" ref={canvasRef} />

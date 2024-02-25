@@ -21,7 +21,6 @@ export default class ResourceTracker {
     }
 
     public dispose() {
-        console.log("this.resources:", this.resources);
         for (const resource of this.resources) {
             if (resource instanceof Object3D) {
                 if (resource.parent) {
