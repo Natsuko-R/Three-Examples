@@ -8,6 +8,7 @@ import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import ResourceTracker from "./manager/tracker/ResourceTrackerManager";
+import { GLTFViewer } from "./GLTFViewer";
 
 const HDR_PATH_TEXTURE: string = '/images/pedestrian_overpass_1k.hdr';
 // const INITIAL_MODEL: string = 'models/gltf/RobotExpressive/RobotExpressive.glb';
@@ -17,7 +18,7 @@ const scaleController = {
   scale: 1.0
 };
 
-export const GLTFViewer = () => {
+export const GLTFClient = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const sceneRef = useRef<Scene>();
@@ -364,25 +365,15 @@ export const GLTFViewer = () => {
   if (!isMount) return null
 
   return (
-    <div
-      id="container"
-      className="relative flex justify-center"
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-    >
-      <div className="absolute bottom-[4rem] z-50">
-        <input
-          type="file"
-          accept=".gltf,.glb"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-        <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
-          GLTFファイルをアップロード
-        </button>
-      </div>
-      <canvas id="glcanvas" className="relative" ref={canvasRef} />
-    </div>
+		<div
+			className="h-full w-full flex-1 bg-gradient-to-r select-none
+		to-indigo-500 from-10% via-sky-500 via-30%
+		from-emerald-500 to-90% rounded p-2 
+		overflow-hidden flex justify-between relative"
+		>
+			<div className="absolute top-0 bottom-0 left-0 right-0 w-auto">
+				<GLTFViewer />
+			</div>
+		</div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { EquirectangularReflectionMapping, AmbientLight, DirectionalLight, Object3D, PerspectiveCamera, Scene, TextureLoader, WebGLRenderer, Box3, Vector3, BoxGeometry, Mesh, MeshLambertMaterial, Box3Helper, Color } from "three"
+import { EquirectangularReflectionMapping, AmbientLight, DirectionalLight, Object3D, PerspectiveCamera, Scene, WebGLRenderer, Box3, Vector3 } from "three"
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js"
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
@@ -9,42 +9,33 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
 import ResourceTracker from "./manager/tracker/ResourceTrackerManager";
 
+type GuiData = {
+  modelFileUrl: string;
+  scale: number;
+  rotateY: boolean;
+};
+
 const HDR_PATH_TEXTURE: string = '/images/pedestrian_overpass_1k.hdr';
 
-// const MODEL_LIST: Record<string, string> = {
-//   '1': 'models/gltf/Flamingo.glb',
-//   '2': 'models/gltf/AnisotropyBarnLamp.glb',
-//   '3': 'models/gltf/Horse.glb',
-//   '4': 'models/gltf/Nefertiti.glb',
-//   '5': 'models/gltf/Stork.glb',
-//   '6': 'models/gltf/SheenChair.glb',
-// };
-
-const MODEL_LIST: Record<number, string> = {
-  1: 'models/gltf/Flamingo.glb',
-  2: 'models/gltf/AnisotropyBarnLamp.glb',
-  3: 'models/gltf/Horse.glb',
-  4: 'models/gltf/Nefertiti.glb',
-  5: 'models/gltf/Stork.glb',
-  6: 'models/gltf/SheenChair.glb',
-};
-
-const guiScaleControl: { scale: number } = {
-  scale: 1.0
-};
-
-const guiData: Record<string, string> = {
-  modelFileName: MODEL_LIST['1'],
+const MODEL_LIST: Record<string, string> = {
+  'SheenChair': 'models/SheenChair.glb',
+  'AnisotropyBarnLamp': 'models/AnisotropyBarnLamp.glb',
+  'Nefertiti': 'models/Nefertiti.glb',
+  'RobotExpressive': 'models/RobotExpressive.glb',
+  'Flamingo': 'models/Flamingo.glb',
+  'Horse': 'models/Horse.glb',
+  'Stork': 'models/Stork.glb',
+  'Parrot': 'models/Parrot.glb',
 };
 
 export const GLTFViewer = () => {
-  const [isMount, setIsMount] = useState(false)
+  const [isMount, setIsMount] = useState(false); // マウント状態の管理
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<Scene>();
   const rendererRef = useRef<WebGLRenderer>();
   const loader = new GLTFLoader();
-  const resMgr = new ResourceTracker();
+  const resMgr = new ResourceTracker(); // 資源管理や回収
   const track = resMgr.track.bind(resMgr);
 
   let scene: Scene, camera: PerspectiveCamera, renderer: WebGLRenderer;
@@ -52,6 +43,14 @@ export const GLTFViewer = () => {
   let model: Object3D;
   let requestId: number;
 
+  // GUIデータの初期値
+  const guiData: GuiData = {
+    modelFileUrl: MODEL_LIST['SheenChair'],
+    scale: 1.0,
+    rotateY: false
+  };
+
+  // 初期化処理
   const initWorld = async () => {
 
     // シーン
@@ -77,14 +76,14 @@ export const GLTFViewer = () => {
       antialias: true
     });
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(window.innerWidth , window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
     // カメラコントローラ
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // HDR
+    // HDRの読み込み
 
     new RGBELoader().load(HDR_PATH_TEXTURE, function (texture) {
       texture.mapping = EquirectangularReflectionMapping;
@@ -92,81 +91,85 @@ export const GLTFViewer = () => {
       scene.environment = texture;
     });
 
-    // stats
+    // Stats
 
     stats = new Stats();
     document.querySelector("#container")?.appendChild(stats.dom);
 
-    // init refs
+    // refsの初期化
 
     sceneRef.current = scene;
     rendererRef.current = renderer;
 
-    // init initial model
+    // 初期モデルの読み込み
 
     reloadObject();
 
   }
 
+  // モデルを読み込む
   const reloadObject = async () => {
 
     model && scene.remove(model);
-    // model = null; // 确保不再引用之前加载的模型。
 
-    const gltf = await loadGLTF(guiData.modelFileName);
+    // GLTFの読み込み
+    const gltf = await loadGLTF(guiData.modelFileUrl);
     model = track(gltf.scene);
-    scene.add(model);
 
+    // モデルを画面の中心に設定
     const box = new Box3().setFromObject(model);
     const boxSize = box.getSize(new Vector3()).length();
     const boxCenter = box.getCenter(new Vector3());
     frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
+
+    // モデルの特殊処理
+    if (guiData.modelFileUrl === MODEL_LIST['SheenChair']) {
+      model.position.set(0, -0.2, 0);
+    }
+    if (guiData.modelFileUrl === MODEL_LIST['Nefertiti']) {
+      model.scale.set(0.8, 0.8, 0.8);
+      model.position.set(0, -9, 0);
+    }
+    if (guiData.modelFileUrl === MODEL_LIST['AnisotropyBarnLamp']) {
+      model.position.set(0, 0.1, 0);
+    }
+
+    scene.add(model);
+
     createGUI();
   }
 
+  //　GUI作成
   const createGUI = () => {
-
     gui && gui.destroy();
 
-    const guiRight = window.innerWidth * (1 / 4) + 1 * window.innerWidth / 100;
-
-    gui = new GUI({ autoPlace: false });
-    gui.domElement.style.cssText = `
-    position: absolute;
-		top: 1rem;
-		right: ${guiRight}px;
-    z-index: 10000;
-    color: initial;
-	  `
-    document.getElementById("container")?.appendChild(gui.domElement);
-
+    gui = new GUI();
+    gui.add(guiData, 'modelFileUrl', MODEL_LIST)
+      .name('モデル')
+      .onFinishChange(() => reloadObject());
     gui.add(camera, "fov")
+      .name("カメラ調整")
       .min(10)
       .max(100)
       .step(1)
       .onChange(() => camera.updateProjectionMatrix())
-      .name("カメラ調整")
-    gui.add(guiScaleControl, "scale", 0.1, 5)
-      .step(0.1)
+    gui.add(guiData, "scale", 0.1, 5)
       .name("スケール")
+      .step(0.1)
       .onChange(() => {
-        model.scale.set(guiScaleControl.scale, guiScaleControl.scale, guiScaleControl.scale);
+        model.scale.set(guiData.scale, guiData.scale, guiData.scale);
       });
-    gui.add(guiData, 'modelFileName', MODEL_LIST)
-      .name('モデル')
-      .onFinishChange(() => reloadObject());
+    gui.add(guiData, 'rotateY')
+      .name('回転Y軸')
   }
 
+  //　動画
   const animate = () => {
     renderer.render(scene, camera);
     controls.update();
-
-    scene.children.forEach(item => {
-      if (item.name === "NewModel" || item.name === "InitialModel") {
-        item.rotation.y += 0.01;
-      }
-    });
-
+    if (model && guiData.rotateY) {
+      model.rotation.y += 0.01;
+    };
     requestId = requestAnimationFrame(animate);
   }
 
@@ -174,10 +177,10 @@ export const GLTFViewer = () => {
   const onWindowResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    createGUI();
-    renderer.setSize(window.innerWidth , window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  // 画面の中心にモデルを配置する
   const frameArea = (sizeToFitOnScreen: number, boxSize: number, boxCenter: Vector3, camera: PerspectiveCamera) => {
 
     const halfSizeToFitOnScreen = sizeToFitOnScreen * 0.5;
@@ -203,6 +206,7 @@ export const GLTFViewer = () => {
 
   }
 
+  // 古いモデルをクリアする関数
   const clearOldModel = () => {
     if (!sceneRef.current || !rendererRef.current) return;
 
@@ -215,6 +219,7 @@ export const GLTFViewer = () => {
     groups.forEach((g) => g.parent?.remove(g));
   };
 
+  // ファイルのアップロードを処理する関数
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
     const file = e.target.files?.[0];
@@ -233,6 +238,7 @@ export const GLTFViewer = () => {
     frameArea(boxSize * 1.1, boxSize, boxCenter, camera);
   };
 
+  // ドラッグアンドドロップを処理する関数
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -257,15 +263,17 @@ export const GLTFViewer = () => {
     reader.readAsDataURL(file);
   };
 
+  // ドラッグオーバーを処理する関数
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
+  // GLTFをロードする関数
   const loadGLTF = (url: string): Promise<GLTF> => {
 
     return new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
 
-  }
+  };
 
   useEffect(() => {
     if (isMount) {
@@ -274,6 +282,8 @@ export const GLTFViewer = () => {
       window.addEventListener("resize", onWindowResize)
     };
     setIsMount(true);
+
+    // アンマウントする時、リソースを解放する
     return () => {
       cancelAnimationFrame(requestId)
       window.removeEventListener("resize", onWindowResize)
@@ -286,29 +296,30 @@ export const GLTFViewer = () => {
   if (!isMount) return null;
 
   return (
-    // <div
-    //   id="container"
-    //   className="flex w-full relative"
-    //   onDrop={handleDrop}
-    //   onDragOver={handleDragOver}
-    // >
-    //   <canvas id="glcanvas" className="w-3/4 h-full" ref={canvasRef} />
-    //   <div className="w-full bg-slate-800 flex flex-col justify-center gap-4 items-center ">
-    //     <p className="text-white">プレビューしたいGLTFモデルを、</p>
-    //     <p className="text-white">ここにドラッグ＆ドロップ</p>
-    //     <input
-    //       type="file"
-    //       accept=".gltf,.glb"
-    //       ref={fileInputRef}
-    //       onChange={handleFileUpload}
-    //       className="hidden"
-    //     />
-    //     <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
-    //       またはファイルを選択
-    //     </button>
-    //   </div>
-    // </div>
-    <canvas id="glcanvas" ref={canvasRef}  className="w-3/4"/>
-
+    <div
+      id="container"
+      className="relative flex justify-center"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
+      <div className="absolute bottom-[2rem] z-50 bg-slate-800 px-8 py-6 flex gap-4 items-center ">
+        <div className="text-white">
+          プレビューしたいGLTFモデルを、ここにドラッグ＆ドロップ
+        </div>
+        <div>
+          <input
+            type="file"
+            accept=".gltf,.glb"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
+            またはファイルを選択
+          </button>
+        </div>
+      </div>
+      <canvas id="glcanvas" className="relative" ref={canvasRef} />
+    </div>
   )
 }

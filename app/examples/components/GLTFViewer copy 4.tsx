@@ -286,29 +286,27 @@ export const GLTFViewer = () => {
   if (!isMount) return null;
 
   return (
-    // <div
-    //   id="container"
-    //   className="flex w-full relative"
-    //   onDrop={handleDrop}
-    //   onDragOver={handleDragOver}
-    // >
-    //   <canvas id="glcanvas" className="w-3/4 h-full" ref={canvasRef} />
-    //   <div className="w-full bg-slate-800 flex flex-col justify-center gap-4 items-center ">
-    //     <p className="text-white">プレビューしたいGLTFモデルを、</p>
-    //     <p className="text-white">ここにドラッグ＆ドロップ</p>
-    //     <input
-    //       type="file"
-    //       accept=".gltf,.glb"
-    //       ref={fileInputRef}
-    //       onChange={handleFileUpload}
-    //       className="hidden"
-    //     />
-    //     <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
-    //       またはファイルを選択
-    //     </button>
-    //   </div>
-    // </div>
-    <canvas id="glcanvas" ref={canvasRef}  className="w-3/4"/>
-
+    <div
+      id="container"
+      className="flex w-full relative"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
+      <canvas id="glcanvas" className="w-3/4 h-full" ref={canvasRef} />
+      <div className="w-full bg-slate-800 flex flex-col justify-center gap-4 items-center ">
+        <p className="text-white">プレビューしたいGLTFモデルを、</p>
+        <p className="text-white">ここにドラッグ＆ドロップ</p>
+        <input
+          type="file"
+          accept=".gltf,.glb"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          className="hidden"
+        />
+        <button onClick={() => fileInputRef.current?.click()} className="bg-slate-500 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded">
+          またはファイルを選択
+        </button>
+      </div>
+    </div>
   )
 }
