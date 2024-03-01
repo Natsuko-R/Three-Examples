@@ -144,8 +144,18 @@ export const GLTFViewer = () => {
     gui && gui.destroy();
 
     gui = new GUI();
+
+    // guiのDOM要素はが非同期に作成されるため、タイマーを設定してselect要素を取得
+    setTimeout(() => {
+      const selectElement = gui.domElement.querySelector('select');
+      if (selectElement) {
+        selectElement.style.backgroundColor = '#fff';
+        selectElement.style.color = '#000';
+      }
+    }, 100);
+
     gui.add(guiData, 'modelFileUrl', MODEL_LIST)
-      .name('モデル')
+      .name('モデル選択')
       .onFinishChange(() => reloadObject());
     gui.add(camera, "fov")
       .name("カメラ調整")
@@ -154,7 +164,7 @@ export const GLTFViewer = () => {
       .step(1)
       .onChange(() => camera.updateProjectionMatrix())
     gui.add(guiData, "scale", 0.1, 5)
-      .name("スケール")
+      .name("スケール調整")
       .step(0.1)
       .onChange(() => {
         model.scale.set(guiData.scale, guiData.scale, guiData.scale);
