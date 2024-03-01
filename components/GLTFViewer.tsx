@@ -133,6 +133,10 @@ export const GLTFViewer = () => {
     if (guiData.modelFileUrl === MODEL_LIST['AnisotropyBarnLamp']) {
       model.position.set(0, 0.1, 0);
     }
+    if (guiData.modelFileUrl === MODEL_LIST['RobotExpressive']) {
+      model.scale.set(30, 30, 30);
+      model.position.set(0, -40, 0);
+    }
 
     scene.add(model);
 
