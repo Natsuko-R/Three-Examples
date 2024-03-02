@@ -6,6 +6,7 @@ export default class ResourceTracker {
 
     public constructor() { }
 
+    // リソースを追跡する 
     public track(resource: Mesh | Object3D) {
         if (!this.contains(resource)) {
             this.resources.push(resource);
@@ -13,6 +14,7 @@ export default class ResourceTracker {
         return resource;
     }
 
+    // リソースの追跡をやめる 
     public untrack(resource: Mesh | Object3D) {
         const index = this.resources.indexOf(resource);
         if (index !== -1) {
@@ -20,6 +22,7 @@ export default class ResourceTracker {
         }
     }
 
+    // リソースを破棄する 
     public dispose() {
         for (const resource of this.resources) {
             if (resource instanceof Object3D) {
@@ -28,7 +31,6 @@ export default class ResourceTracker {
                 }
             }
             if (resource instanceof Mesh) {
-                // 释放 Mesh 的材质
                 const materials = resource.material instanceof Array ? resource.material : [resource.material];
                 materials.forEach(material => {
                     this.disposeMaterial(material);
@@ -38,12 +40,13 @@ export default class ResourceTracker {
         this.resources.length = 0;
     }
 
+    // リソースが含まれているかを確認する 
     private contains(resource: Mesh | Object3D): boolean {
         return this.resources.indexOf(resource) !== -1;
     }
 
+    // マテリアルを破棄する 
     private disposeMaterial(material: Material) {
-        // 检查是否有 dispose 方法
         if (typeof material.dispose === 'function') {
             material.dispose();
         }

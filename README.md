@@ -1,31 +1,34 @@
-# Three.js Learning Repository
+# GLTFビューアー
 
-## Introduction
+このプロジェクトは、three.jsを使用したGLTFビューアーです。
 
-I use this repository to record my learning process of three.js. I rewrite each example on my own after understanding the code.
+## テックスタック
+- フレームワーク: Next.js
+- 3Dライブラリ: three.js
+- スタイリング: Tailwind CSS
 
-## 目的
+## 実装される機能
+1. ローカルPCからのモデルデータのドラッグアンドドロップまたは選択による読み込み。ブラウザ画面に表示されます。
+2. マウスの左ボタンを押しながらマウスを移動すると、読み込まれたモデルが回転します。
+3. マウスの右ボタンを押しながらマウスを移動すると、読み込まれたモデルが移動します。
+4. マウスの中央ボタンを押しながらマウスを移動すると、読み込まれたモデルが拡大縮小します。
+5. パフォーマンスの測定（stats性能検査）
+6. dat.GUIパネル：
+    - 表示するモデルを選択する
+    - カメラの視野角を調整する
+    - モデルのスケールを調整する
+    - モデルをY軸で回転させる
 
-このリポジトリは、three.jsの勉強を記録するために使用されています。理解を基に、私自分で書き直しています。
+## 最適化
+外部でインポートされたモデル自体がboundingboxの中心になっていない場合、モデルが画面に収まらない問題が発生する可能性があります。
 
-
-
-
-## Getting Started
-
-First, run the development server:
+## VS Codeなどでローカルでの実行
 
 ```bash
+git clone https://github.com/Natsuko-R/gltf-viewer.git
+cd gltf-viewer
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
+## ブラウザで http://localhost:3000 を開いて確認してください。

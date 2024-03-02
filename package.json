@@ -1,5 +1,5 @@
 {
-  "name": "three-examples",
+  "name": "gltf-viewer",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,11 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.8.2",
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "@react-three/fiber": "^8.15.16",
-    "framer-motion": "^10.17.12",
     "next": "14.0.4",
     "react": "^18",
     "react-dom": "^18",

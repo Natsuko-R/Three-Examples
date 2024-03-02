@@ -7,7 +7,7 @@ import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import Stats from 'three/addons/libs/stats.module.js';
-import ResourceTracker from "./manager/tracker/ResourceTrackerManager";
+import ResourceTracker from "./manager/ResourceTrackerManager";
 
 type GuiData = {
   modelFileUrl: string;
